@@ -13,6 +13,7 @@ class ConfirmYourBidPINViewController: UIViewController {
     @IBOutlet var bidDetailsPreviewView: BidDetailsPreviewView!
 
     lazy var pin: Observable<String> = { self.keypadContainer.stringValue }()
+    lazy var viewModel: ConfirmYourBidPINViewModelType = ConfirmYourBidPINViewModel()
 
     var provider: Networking!
 
@@ -67,7 +68,13 @@ class ConfirmYourBidPINViewController: UIViewController {
                 }
                 .flatMap { provider -> Observable<AuthorizedNetworking> in
                     return me
-                        .checkForCreditCard(loggedInProvider)
+                        .viewModel
+                        .checkForCCAdminBypass(bidDetails, authenticatedProvider: provider)
+                        .mapReplace(provider)// TODO: Remove mapReplace
+                }
+                .flatMap { provider -> Observable<AuthorizedNetworking> in
+                    return me
+                        .checkForCreditCard(provider)
                         .doOnNext { cards in
                             // If the cards list doesn't exist, or its .empty, then perform the segue to collect one.
                             // Otherwise, proceed directly to the loading view controller to place the bid.
